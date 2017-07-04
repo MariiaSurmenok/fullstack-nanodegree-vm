@@ -4,6 +4,7 @@
 #
 
 import psycopg2
+import bleach
 
 
 def connect():
@@ -13,25 +14,43 @@ def connect():
 
 def deleteMatches():
     """Remove all the match records from the database."""
-
+    db = connect()
+    cursor = db.cursor()
+    cursor.execute("DELETE FROM matches;")
+    db.commit()
+    db.close()
 
 def deletePlayers():
     """Remove all the player records from the database."""
-
+    db = connect()
+    cursor = db.cursor()
+    cursor.execute("DELETE FROM players;")
+    db.commit()
+    db.close()
 
 def countPlayers():
     """Returns the number of players currently registered."""
-
+    db = connect()
+    cursor = db.cursor()
+    cursor.execute("SELECT count(*) FROM players;")
+    counter = cursor.fetchone()[0]
+    db.close()
+    return counter
 
 def registerPlayer(name):
     """Adds a player to the tournament database.
-  
+
     The database assigns a unique serial id number for the player.  (This
     should be handled by your SQL database schema, not in your Python code.)
   
     Args:
       name: the player's full name (need not be unique).
     """
+    db = connect()
+    cursor = db.cursor()
+    cursor.execute("INSERT INTO players (name) values (%s)", (bleach.clean(name),))
+    db.commit()
+    db.close()
 
 
 def playerStandings():
@@ -48,6 +67,21 @@ def playerStandings():
         matches: the number of matches the player has played
     """
 
+    db = connect()
+    cursor = db.cursor()
+    cursor.execute(
+        "select players.id, name, "
+        "    sum(case WHEN matches.winner = players.id then 1 else 0 end) as wins, "
+        "    count(matches.id) as matches "
+        "from players "
+        "left join matches "
+        "    on players.id = matches.winner or players.id = matches.loser "
+        "group by players.id "
+        "order by wins desc;"
+    )
+    statistics = cursor.fetchall()
+    db.close()
+    return statistics
 
 def reportMatch(winner, loser):
     """Records the outcome of a single match between two players.
@@ -56,6 +90,12 @@ def reportMatch(winner, loser):
       winner:  the id number of the player who won
       loser:  the id number of the player who lost
     """
+    db = connect()
+    cursor = db.cursor()
+    cursor.execute("INSERT INTO matches (winner, loser) values (%s, %s)",
+                   (bleach.clean(winner), bleach.clean(loser)))
+    db.commit()
+    db.close()
  
  
 def swissPairings():
@@ -73,5 +113,26 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
-
+    db = connect()
+    cursor = db.cursor()
+    cursor.execute(
+        "select players.id, name "
+        "from players "
+        "left join matches "
+        "    on players.id = matches.winner "
+        "group by players.id "
+        "order by count(matches.id) desc;"
+    )
+    players = cursor.fetchall()
+    db.close()
+    players_next_round = []
+    x = 0
+    while x < len(players):
+        id1 = players[x][0]
+        name1 = players[x][1]
+        id2 = players[x + 1][0]
+        name2 = players[x + 1][1]
+        players_next_round.append((id1, name1, id2, name2))
+        x += 2
+    return players_next_round
 
