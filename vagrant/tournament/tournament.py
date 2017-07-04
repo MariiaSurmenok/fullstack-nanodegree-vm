@@ -126,13 +126,11 @@ def swissPairings():
     players = cursor.fetchall()
     db.close()
     players_next_round = []
-    x = 0
-    while x < len(players):
+    for x in range(0, len(players), 2):
         id1 = players[x][0]
         name1 = players[x][1]
         id2 = players[x + 1][0]
         name2 = players[x + 1][1]
         players_next_round.append((id1, name1, id2, name2))
-        x += 2
     return players_next_round
 
