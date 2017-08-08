@@ -2,7 +2,7 @@
  Python module that uses the PostgreSQL database to implement [Swiss-system tournament](https://en.wikipedia.org/wiki/Swiss-system_tournament).
 
 ## Prerequisites
-- Install [VirtualBox7](https://www.virtualbox.org/wiki/Downloads)
+- Install [VirtualBox](https://www.virtualbox.org/wiki/Downloads)
 - Install [Vagrant](https://www.vagrantup.com/)
 
 ## Download the project
